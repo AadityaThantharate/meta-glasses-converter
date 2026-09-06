@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ray-Ban Meta Spin View Converter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.js"></script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f3f4f6;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="text-center max-w-2xl mb-8">
+    <span class="inline-block bg-pink-500/10 text-pink-400 border border-pink-500/20 text-xs font-semibold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+      Ray-Ban Meta photo tool
+    </span>
+    <h1 class="text-4xl font-extrabold text-white mb-3 tracking-tight">
+      Ray-Ban Meta Spin View Converter
+    </h1>
+    <p class="text-gray-400 text-sm md:text-base">
+      Format any photo to <span class="text-pink-400 font-semibold">3024 x 4032 px</span> with Meta AI EXIF metadata.
+    </p>
+  </div>
+
+  <main class="w-full max-w-2xl bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-2xl">
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <button type="button" onclick="document.getElementById('cameraInput').click()" class="flex flex-col items-center justify-center py-3 bg-[#1f2937] hover:bg-[#374151] rounded-xl text-xs sm:text-sm font-medium transition">
+        <span class="text-pink-400 text-lg mb-1" aria-hidden="true">&#128247;</span>
+        Take Photo
+      </button>
+      <button type="button" onclick="document.getElementById('fileInput').click()" class="flex flex-col items-center justify-center py-3 bg-[#1f2937] hover:bg-[#374151] rounded-xl text-xs sm:text-sm font-medium transition">
+        <span class="text-indigo-400 text-lg mb-1" aria-hidden="true">&#128444;</span>
+        Photo Library
+      </button>
+      <button type="button" onclick="pasteFromClipboard()" class="flex flex-col items-center justify-center py-3 bg-[#1f2937] hover:bg-[#374151] rounded-xl text-xs sm:text-sm font-medium transition">
+        <span class="text-emerald-400 text-lg mb-1" aria-hidden="true">&#128203;</span>
+        Paste (Ctrl+V)
+      </button>
+    </div>
+
+    <div id="dropZone" class="border-2 border-dashed border-gray-700 hover:border-pink-500 rounded-xl p-8 text-center cursor-pointer bg-[#0d131f] transition relative overflow-hidden">
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden">
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
+      <div id="uploadPrompt" class="space-y-3">
+        <div class="w-12 h-12 mx-auto bg-pink-500/10 rounded-full flex items-center justify-center text-pink-400 text-2xl" aria-hidden="true">&#8593;</div>
+        <p class="font-semibold text-gray-200">Tap or drag a photo here</p>
+        <p class="text-xs text-gray-500">Supports JPG, JPEG, PNG, and WebP</p>
+      </div>
+      <img id="imagePreview" class="hidden max-h-64 mx-auto rounded-lg shadow-lg" alt="Converted image preview">
+    </div>
+
+    <div id="status" class="hidden mt-4 text-center text-sm" role="status"></div>
+    <div id="resultSection" class="hidden mt-6 text-center">
+      <button type="button" onclick="downloadConvertedImage()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+        <span aria-hidden="true">&#8595;</span>
+        <span>Download converted photo</span>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    let convertedImageDataUrl = "";
+
+    const fileInput = document.getElementById('fileInput');
+    const cameraInput = document.getElementById('cameraInput');
+    const dropZone = document.getElementById('dropZone');
+    const status = document.getElementById('status');
+
+    fileInput.addEventListener('change', handleFileSelect);
+    cameraInput.addEventListener('change', handleFileSelect);
+    dropZone.addEventListener('click', (event) => {
+      if (event.target === dropZone || event.target.closest('#uploadPrompt')) fileInput.click();
+    });
+    dropZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropZone.classList.add('border-pink-500');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-pink-500'));
+    dropZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('border-pink-500');
+      if (event.dataTransfer.files.length) processImage(event.dataTransfer.files[0]);
+    });
+
+    document.addEventListener('paste', (event) => {
+      const item = [...event.clipboardData.items].find((entry) => entry.type.startsWith('image/'));
+      if (item) processImage(item.getAsFile());
+    });
+
+    function handleFileSelect(event) {
+      if (event.target.files[0]) processImage(event.target.files[0]);
+      event.target.value = '';
+    }
+
+    async function pasteFromClipboard() {
+      try {
+        const items = await navigator.clipboard.read();
+        const item = items.find((entry) => entry.types.some((type) => type.startsWith('image/')));
+        if (!item) throw new Error('No image found in clipboard.');
+        const type = item.types.find((entry) => entry.startsWith('image/'));
+        processImage(await item.getType(type));
+      } catch (error) {
+        showStatus(error.message || 'Clipboard access is not available in this browser.', true);
+      }
+    }
+
+    function processImage(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showStatus('Please choose a supported image file.', true);
+        return;
+      }
+      showStatus('Converting photo...');
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 3024;
+          canvas.height = 4032;
+          const context = canvas.getContext('2d');
+          context.fillStyle = '#000000';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+
+          const targetAspect = canvas.width / canvas.height;
+          const imageAspect = img.width / img.height;
+          let drawWidth;
+          let drawHeight;
+          let offsetX;
+          let offsetY;
+          if (imageAspect > targetAspect) {
+            drawHeight = canvas.height;
+            drawWidth = img.width * (canvas.height / img.height);
+            offsetX = (canvas.width - drawWidth) / 2;
+            offsetY = 0;
+          } else {
+            drawWidth = canvas.width;
+            drawHeight = img.height * (canvas.width / img.width);
+            offsetX = 0;
+            offsetY = (canvas.height - drawHeight) / 2;
+          }
+          context.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+          convertedImageDataUrl = injectMetaExif(canvas.toDataURL('image/jpeg', 0.95));
+          document.getElementById('uploadPrompt').classList.add('hidden');
+          const preview = document.getElementById('imagePreview');
+          preview.src = convertedImageDataUrl;
+          preview.classList.remove('hidden');
+          document.getElementById('resultSection').classList.remove('hidden');
+          showStatus('Photo ready to download.');
+        };
+        img.onerror = () => showStatus('The selected file could not be read as an image.', true);
+        img.src = event.target.result;
+      };
+      reader.onerror = () => showStatus('The selected file could not be read.', true);
+      reader.readAsDataURL(file);
+    }
+
+    function injectMetaExif(jpegDataUrl) {
+      const zeroth = {};
+      zeroth[piexif.ImageIFD.Make] = 'Meta AI';
+      zeroth[piexif.ImageIFD.Model] = 'Ray-Ban Meta Smart Glasses 2';
+      zeroth[piexif.ImageIFD.Software] = 'Meta View 171.0.0.38';
+      return piexif.insert(piexif.dump({ '0th': zeroth, 'EXIF': {}, 'GPS': {} }), jpegDataUrl);
+    }
+
+    function downloadConvertedImage() {
+      if (!convertedImageDataUrl) return;
+      const link = document.createElement('a');
+      link.href = convertedImageDataUrl;
+      link.download = 'meta-glasses-converted.jpg';
+      link.click();
+    }
+
+    function showStatus(message, isError = false) {
+      status.textContent = message;
+      status.className = `mt-4 text-center text-sm ${isError ? 'text-red-400' : 'text-gray-400'}`;
+    }
+  </script>
+</body>
+</html>
