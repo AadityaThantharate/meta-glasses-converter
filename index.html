@@ -113,13 +113,19 @@
     function injectMetaExif(jpegDataUrl) {
       const zeroth = {};
       const exif = {};
+      const captureDate = "2026:09:06 12:40:22";
 
-      // Hardware tags
-      zeroth[piexif.ImageIFD.Make] = "Luxottica";
-      zeroth[piexif.ImageIFD.Model] = "Ray-Ban Meta Smart Glasses";
-      zeroth[piexif.ImageIFD.Software] = "Meta View 178.0.0.40";
+      zeroth[piexif.ImageIFD.Make] = "Meta";
+      zeroth[piexif.ImageIFD.Model] = "Ray-Ban Meta";
+      zeroth[piexif.ImageIFD.Software] = "Meta View 178.0";
+      zeroth[piexif.ImageIFD.DateTime] = captureDate;
+      zeroth[piexif.ImageIFD.Orientation] = 1;
+      zeroth[piexif.ImageIFD.XResolution] = [72, 1];
+      zeroth[piexif.ImageIFD.YResolution] = [72, 1];
+      zeroth[piexif.ImageIFD.ResolutionUnit] = 2;
 
-      // Camera specs
+      exif[piexif.ExifIFD.DateTimeOriginal] = captureDate;
+      exif[piexif.ExifIFD.DateTimeDigitized] = captureDate;
       exif[piexif.ExifIFD.FNumber] = [22, 10];
       exif[piexif.ExifIFD.FocalLengthIn35mmFilm] = 24;
       exif[piexif.ExifIFD.ExifVersion] = "0232";
