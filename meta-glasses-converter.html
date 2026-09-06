@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ray-Ban Meta Spin View Converter</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Piexifjs for EXIF metadata manipulation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.js"></script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f3f4f6;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- Header -->
+  <div class="text-center max-w-2xl mb-8">
+    <span class="inline-block bg-pink-500/10 text-pink-400 border border-pink-500/20 text-xs font-semibold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+      🔥 Viral Instagram Story "Spin View" Trick
+    </span>
+    <h1 class="text-4xl font-extrabold text-white mb-3 tracking-tight">
+      Ray–Ban Meta Spin View Converter
+    </h1>
+    <p class="text-gray-400 text-sm md:text-base">
+      Format any photo to official <span class="text-pink-400 font-semibold">3024 × 4032 px</span> Ray–Ban Meta specs with Meta AI EXIF. Unlocks the secret <span class="text-cyan-400 font-semibold">3D Spin View effect</span> on Instagram Stories.
+    </p>
+  </div>
+
+  <!-- Main Card Container -->
+  <div class="w-full max-w-2xl bg-[#111827] border border-gray-800 rounded-2xl p-6 shadow-2xl">
+    
+    <!-- Action Buttons -->
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <button onclick="document.getElementById('fileInput').click()" class="flex flex-col items-center justify-center py-3 bg-[#1f2937] hover:bg-[#374151] rounded-xl text-xs sm:text-sm font-medium transition">
+        <svg class="w-5 h-5 mb-1 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+        Take Photo
+      </button>
+      <button onclick="document.getElementById('fileInput').click()" class="flex flex-col items-center justify-center py-3 bg-[#1f2937] hover:bg-[#374151] rounded-xl text-xs sm:text-sm font-medium transition">
+        <svg class="w-5 h-5 mb-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        Photo Library
+      </button>
+      <button onclick="pasteFromClipboard()" class="flex flex-col items-center justify-center py-3 bg-[#1f2937] hover:bg-[#374151] rounded-xl text-xs sm:text-sm font-medium transition">
+        <svg class="w-5 h-5 mb-1 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        Paste (Ctrl+V)
+      </button>
+    </div>
+
+    <!-- Drop Zone / Upload Box -->
+    <div 
+      id="dropZone" 
+      onclick="document.getElementById('fileInput').click()" 
+      class="border-2 border-dashed border-gray-700 hover:border-pink-500 rounded-xl p-8 text-center cursor-pointer bg-[#0d131f] transition relative overflow-hidden group"
+    >
+      <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" class="hidden" onchange="handleFileSelect(event)">
+      
+      <div id="uploadPrompt" class="space-y-3">
+        <div class="w-12 h-12 mx-auto bg-pink-500/10 rounded-full flex items-center justify-center text-pink-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </div>
+        <p class="font-semibold text-gray-200">Tap or Drag & Drop Photo Here</p>
+        <p class="text-xs text-gray-500">Supports JPG, JPEG, PNG, WebP • Auto EXIF Orientation</p>
+      </div>
+
+      <!-- Preview Image (Hidden initially) -->
+      <img id="imagePreview" class="hidden max-h-64 mx-auto rounded-lg shadow-lg" alt="Preview">
+    </div>
+
+    <!-- Download Section (Hidden initially) -->
+    <div id="resultSection" class="hidden mt-6 text-center">
+      <button onclick="downloadConvertedImage()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        <span>Download 3D Meta Photo</span>
+      </button>
+      <p class="text-xs text-gray-400 mt-2">Upload directly to Instagram Story to reveal the Glasses badge.</p>
+    </div>
+
+  </div>
+
+  <script>
+    let convertedImageDataUrl = "";
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) processImage(file);
+    }
+
+    // Handle Drag and Drop
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-pink-500'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-pink-500'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-pink-500');
+      if (e.dataTransfer.files.length) processImage(e.dataTransfer.files[0]);
+    });
+
+    // Handle Clipboard Paste
+    async function pasteFromClipboard() {
+      try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const type = item.types.find(t => t.startsWith('image/'));
+          if (type) {
+            const blob = await item.getType(type);
+            processImage(blob);
+            return;
+          }
+        }
+        alert('No image found in clipboard!');
+      } catch (err) {
+        alert('Clipboard access denied or not supported in this browser.');
+      }
+    }
+
+    function processImage(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          // 1. Create target 3024x4032 Canvas
+          const canvas = document.createElement('canvas');
+          canvas.width = 3024;
+          canvas.height = 4032;
+          const ctx = canvas.getContext('2d');
+
+          // 2. Fill background (Black)
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // 3. Aspect Ratio Cover / Fit Logic
+          const targetAspect = 3024 / 4032;
+          const imgAspect = img.width / img.height;
+          let drawWidth, drawHeight, offsetX, offsetY;
+
+          if (imgAspect > targetAspect) {
+            drawHeight = canvas.height;
+            drawWidth = img.width * (canvas.height / img.height);
+            offsetX = (canvas.width - drawWidth) / 2;
+            offsetY = 0;
+          } else {
+            drawWidth = canvas.width;
+            drawHeight = img.height * (canvas.width / img.width);
+            offsetX = 0;
+            offsetY = (canvas.height - drawHeight) / 2;
+          }
+
+          ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+          // 4. Export as base64 JPEG
+          const resizedJpegBase64 = canvas.toDataURL('image/jpeg', 0.95);
+
+          // 5. Inject Meta AI EXIF Metadata
+          convertedImageDataUrl = injectMetaExif(resizedJpegBase64);
+
+          // 6. Update UI
+          document.getElementById('uploadPrompt').classList.add('hidden');
+          const preview = document.getElementById('imagePreview');
+          preview.src = convertedImageDataUrl;
+          preview.classList.remove('hidden');
+          document.getElementById('resultSection').classList.remove('hidden');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function injectMetaExif(jpegDataUrl) {
+      // Define standard Ray-Ban Meta Gen 2 EXIF markers
+      const zeroth = {};
+      zeroth[piexif.ImageIFD.Make] = "Meta AI";
+      zeroth[piexif.ImageIFD.Model] = "Ray-Ban Meta Smart Glasses 2";
+      zeroth[piexif.ImageIFD.Software] = "Meta View 171.0.0.38";
+
+      const exifObj = { "0th": zeroth, "EXIF": {}, "GPS": {} };
+      const exifBytes = piexif.dump(exifObj);
+
+      // Insert EXIF binary header into JPEG
+      return piexif.insert(exifBytes, jpegDataUrl);
+    }
+
+    function downloadConvertedImage() {
+      if (!convertedImageDataUrl) return;
+      const a = document.createElement('a');
+      a.href = convertedImageDataUrl;
+      a.download = 'meta-glasses-converted.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  </script>
+</body>
+</html>
